@@ -19,7 +19,6 @@ const int bits[10] = {
     0x67   // 9
 };
 
-// ISR -> main communication (Rule 1.1 + 1.2: volatile global only for ISR)
 volatile int btn_pressed = 0;
 
 void seven_seg_init(void) {
