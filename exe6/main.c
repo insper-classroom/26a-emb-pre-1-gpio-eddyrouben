@@ -19,6 +19,9 @@ const int bits[10] = {
     0x67   // 9
 };
 
+// ISR -> main communication (Rule 1.1 + 1.2: volatile global only for ISR)
+volatile int btn_pressed = 0;
+
 void seven_seg_init(void) {
     for (int gpio = FIRST_GPIO; gpio < FIRST_GPIO + 7; gpio++) {
         gpio_init(gpio);
@@ -35,29 +38,33 @@ void seven_seg_display(int cnt) {
     }
 }
 
+void gpio_callback(uint gpio, uint32_t events) {
+    btn_pressed = 1;
+}
+
 int main() {
     stdio_init_all();
 
-    int cnt      = 0;
-    int last_btn = 1; 
+    int cnt = 0;
 
     gpio_init(BTN_PIN_G);
     gpio_set_dir(BTN_PIN_G, GPIO_IN);
     gpio_pull_up(BTN_PIN_G);
 
+    gpio_set_irq_enabled_with_callback(BTN_PIN_G, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+
     seven_seg_init();
     seven_seg_display(cnt);
 
     while (true) {
-        int btn = gpio_get(BTN_PIN_G);
-        if (last_btn && !btn) { 
+        if (btn_pressed) {
+            btn_pressed = 0;
             if (++cnt > 9) {
                 cnt = 0;
             }
             seven_seg_display(cnt);
             printf("cnt: %d\n", cnt);
         }
-        last_btn = btn;
-        sleep_ms(10); 
+        sleep_ms(10);
     }
 }
